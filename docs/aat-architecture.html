@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture — Agent Automations</title>
+<meta name="description" content="The aat host's crates, state, and execution model.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="aat-architecture.md" title="This page as Markdown">
+<script>(function(){var d=document.documentElement;d.className=d.className.replace("no-js","js");try{var t=localStorage.getItem("aat-theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">Agent Automations</a>
+    <div class="search" role="search">
+      <label class="search-box">
+        <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></span>
+        <span class="visually-hidden">Search the documentation</span>
+        <input id="search-input" type="search" placeholder="Search..." autocomplete="off" spellcheck="false" aria-controls="search-results" aria-expanded="false" aria-autocomplete="list" role="combobox">
+        <kbd class="search-kbd">Ctrl K</kbd>
+      </label>
+      <div id="search-results" class="search-results" role="listbox" aria-label="Search results" hidden></div>
+    </div>
+    <div class="topbar-right">
+      <a class="repo-link" href="https://github.com/lucas-stanford/agent-automations" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg><span>lucas-stanford/agent-automations</span></a>
+      <button type="button" class="theme-toggle" aria-label="Switch to light theme" hidden><span class="icon-sun"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></span><span class="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg></span></button>
+    </div>
+  </div>
+</header>
+<details class="mobile-nav">
+  <summary><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="mobile-nav-current">Architecture</span></summary>
+  <nav aria-label="Documentation"><div class="nav-group"><ul><li><a href="index.html">Overview</a></li><li><a href="specification.html">Specification</a></li><li><a href="validation.html">Validation messages</a></li><li><a href="hosts.html">Hosts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">For automation authors</p><ul><li><a href="quickstart.html">Quickstart</a></li><li><a href="best-practices.html">Best practices</a></li><li><a href="watch-scripts.html">Watch scripts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">For host implementors</p><ul><li><a href="adding-support.html">Adding automations support</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Agent skill</p><ul><li><a href="skill.html">SKILL.md</a></li><li><a href="skill-checklist.html">references/checklist.md</a></li><li><a href="skill-specification.html">references/specification.md</a></li><li><a href="skill-watch-scripts.html">references/watch-scripts.md</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Optional</p><ul><li><a href="flowcharts.html">Flowcharts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">aat</p><ul><li><a href="aat.html">Overview</a></li><li><a href="aat-install.html">Install</a></li><li><a href="aat-cli.html">Commands</a></li><li><a href="aat-config.html">Configuration</a></li><li><a href="aat-agents.html">Agent CLIs</a></li><li><a href="aat-architecture.html" aria-current="page">Architecture</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Example: pi-automations</p><ul><li><a href="pi-automations.html">Overview</a></li><li><a href="quickstart-pi.html">Quickstart</a></li><li><a href="reporting.html">Progress and notes</a></li><li><a href="pi-implementation.html">How it implements the spec</a></li></ul></div></nav>
+</details>
+<div class="layout">
+  <aside class="sidebar">
+    <nav aria-label="Documentation"><div class="nav-group"><ul><li><a href="index.html">Overview</a></li><li><a href="specification.html">Specification</a></li><li><a href="validation.html">Validation messages</a></li><li><a href="hosts.html">Hosts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">For automation authors</p><ul><li><a href="quickstart.html">Quickstart</a></li><li><a href="best-practices.html">Best practices</a></li><li><a href="watch-scripts.html">Watch scripts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">For host implementors</p><ul><li><a href="adding-support.html">Adding automations support</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Agent skill</p><ul><li><a href="skill.html">SKILL.md</a></li><li><a href="skill-checklist.html">references/checklist.md</a></li><li><a href="skill-specification.html">references/specification.md</a></li><li><a href="skill-watch-scripts.html">references/watch-scripts.md</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Optional</p><ul><li><a href="flowcharts.html">Flowcharts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">aat</p><ul><li><a href="aat.html">Overview</a></li><li><a href="aat-install.html">Install</a></li><li><a href="aat-cli.html">Commands</a></li><li><a href="aat-config.html">Configuration</a></li><li><a href="aat-agents.html">Agent CLIs</a></li><li><a href="aat-architecture.html" aria-current="page">Architecture</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Example: pi-automations</p><ul><li><a href="pi-automations.html">Overview</a></li><li><a href="quickstart-pi.html">Quickstart</a></li><li><a href="reporting.html">Progress and notes</a></li><li><a href="pi-implementation.html">How it implements the spec</a></li></ul></div></nav>
+  </aside>
+  <main id="content" class="content" tabindex="-1">
+    <article>
+      <header class="page-header">
+<p class="eyebrow">aat</p>
+        <div class="page-title-row">
+          <h1>Architecture</h1>
+          <div class="page-actions">
+            <button type="button" class="copy-page" hidden><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><span class="copy-page-label">Copy page</span></button>
+            <details class="page-menu">
+              <summary aria-label="More ways to read this page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 10l5 5 5-5"/></svg></summary>
+              <div class="page-menu-items">
+                <a href="aat-architecture.md">View as Markdown</a>
+                <a href="llms.txt">llms.txt</a>
+              </div>
+            </details>
+          </div>
+        </div>
+        <p class="lead">The aat host's crates, state, and execution model.</p>
+      </header>
+      <div class="prose">
+<p><code>aat</code> is a Rust host for the Agent Automations format. The specification in the repository's
+<code>site/content/</code> defines how it must behave:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>File</th><th>What it decides</th></tr></thead>
+<tbody><tr><td><code>specification.md</code></td><td>The format, validation order, consent, runs, records</td></tr>
+<tr><td><code>adding-support.md</code></td><td>What a host must, should and may do, step by step</td></tr>
+<tr><td><code>validation.md</code></td><td>Every refusal message, each with a file that produces it (55)</td></tr>
+<tr><td><code>watch-scripts.md</code></td><td>The <code>on.watch</code> contract</td></tr>
+<tr><td><code>flowcharts.md</code></td><td>Charts and strict flow</td></tr></tbody>
+</table></div>
+<p>Where the spec leaves a choice open, aat follows pi-automations, another host written in
+TypeScript, unless this document says otherwise. <code>docs/GLOSSARY-pa.md</code> is adapted from its
+<code>docs/GLOSSARY.md</code>; use its words in every message and screen.</p>
+<h2 id="independence-from-pi-automations"><a class="heading-anchor" href="#independence-from-pi-automations" aria-label="Link to this section: Independence from pi-automations"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>Independence from pi-automations</h2>
+<p><code>aat</code> never writes pi-automations' state and reads only one file of it: pa's <code>trust.json</code>
+(<code>$PI_AGENT_DIR/pi-automations/trust.json</code>, default <code>~/.pi/agent/pi-automations/trust.json</code>), to
+warn that an automation armed in both hosts would run twice.</p>
+<h2 id="crates"><a class="heading-anchor" href="#crates" aria-label="Link to this section: Crates"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>Crates</h2>
+<div class="code-block"><div class="code-body"><button type="button" class="copy-code" aria-label="Copy code" hidden><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button><pre tabindex="0"><code>aat (bin) --&gt; aat-tui --&gt; aat-model
+   |
+   +--&gt; aat-clock --&gt; aat-run --&gt; aat-spec, aat-state, aat-agents --&gt; aat-model</code></pre></div></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Crate</th><th>Owns</th><th>Must not</th></tr></thead>
+<tbody><tr><td><code>aat-model</code></td><td>Plain types and traits: <code>Automation</code>, <code>RunRecord</code>, <code>TrustFile</code>, <code>StateFile</code>, <code>Config</code>, <code>LiveEvent</code>, <code>AgentCli</code>, <code>Host</code>, <code>StatePaths</code></td><td>do I/O</td></tr>
+<tr><td><code>aat-spec</code></td><td>Frontmatter parse (YAML 1.2), validation in spec order with spec messages, cron grammar and arithmetic, discovery, interpreters, digests, Mermaid chart parse, <code>flow_order</code>, strict flow</td><td>write anything</td></tr>
+<tr><td><code>aat-state</code></td><td>State folder resolution, <code>config.toml</code>, consent (<code>trust.json</code>), <code>state.json</code>, run locks, records (<code>runs/*.jsonl</code>), retention, stop files, the progress store</td><td>start processes</td></tr>
+<tr><td><code>aat-agents</code></td><td>One <code>AgentCli</code> adapter per CLI, CLI detection, a fake CLI for tests</td><td>spawn agent turns (it only plans them)</td></tr>
+<tr><td><code>aat-run</code></td><td><code>fire</code>: lock, consent recheck, timeout, pre hooks, body, post hooks, record; script execution; hook environment; live file; progress verbs</td><td>know about the TUI</td></tr>
+<tr><td><code>aat-clock</code></td><td><code>tick</code>: schedules, grace, catch-up, claims, stagger, watches, tick lock; <code>serve</code>; the OS watcher job</td><td></td></tr>
+<tr><td><code>aat-tui</code></td><td>Every screen, against the <code>Host</code> trait; <code>fake::FakeHost</code> for tests</td><td>touch the filesystem directly</td></tr>
+<tr><td><code>aat</code></td><td>clap CLI; the real <code>Host</code>; wiring</td><td></td></tr></tbody>
+</table></div>
+<h2 id="state-folder"><a class="heading-anchor" href="#state-folder" aria-label="Link to this section: State folder"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>State folder</h2>
+<p><code>AAT_HOME</code> if set, else the per-OS folder in the <a href="aat.html#where-state-lives">README</a>.
+<code>aat_model::StatePaths</code> defines the layout, and the folder is mode 0700 on Unix. <code>aat-state</code> writes
+every JSON file atomically (a temp file in the same folder, then a rename) under a lock, as one
+read-change-write.</p>
+<p>In <code>aat-state</code>:</p>
+<ul>
+<li>The read-change-write lock is an OS lock (<code>flock</code>/<code>LockFileEx</code>) on a sidecar <code>&lt;file&gt;.lock</code>, so a
+process that dies holding it releases it.</li>
+<li>A run lock (<code>locks/&lt;slug&gt;.lock</code>) is an <code>O_EXCL</code> create holding <code>RunLockInfo</code> (pid and its start
+time) plus <code>key</code>, <code>scheduledFor</code> and an optional <code>budgetMs</code>. It is stale when the owner is gone,
+its pid now belongs to a process that started at another time, or it outlived its budget; the
+sweep writes <code>aborted: host stopped</code> with the run's progress folded in.</li>
+<li><code>locks/&lt;slug&gt;.stop</code> names the run to stop. A stop file naming another run is stale, and the
+reader clears it.</li>
+<li><code>progress/&lt;run id&gt;.json</code> holds the run's events (<code>{&quot;version&quot;:1,&quot;events&quot;:[…]}</code>), folded into a
+snapshot on read; <code>progress/&lt;run id&gt;.closed</code> is the tombstone, swept after a week. Chart nodes
+come from <code>aat-spec</code> when the progress is opened.</li>
+<li>aat refuses a <code>config.toml</code> with an unknown key or a value it cannot use, whole and in one line.</li>
+</ul>
+<h2 id="discovery-roots"><a class="heading-anchor" href="#discovery-roots" aria-label="Link to this section: Discovery roots"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>Discovery roots</h2>
+<p>aat reads only the two roots the specification names: <code>~/.agents/automations/</code> (user) and
+<code>.agents/automations/</code> from the working directory up to the repository root (repository). Keys are
+<code>&lt;scope&gt;:&lt;root path&gt;:&lt;name&gt;</code>. Arming a repository automation registers its repository root in
+<code>state.json</code>, so the TUI, <code>aat list</code> and the tick find it from any folder.</p>
+<h2 id="the-aat-binary"><a class="heading-anchor" href="#the-aat-binary" aria-label="Link to this section: The aat binary"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>The <code>aat</code> binary</h2>
+<ul>
+<li>aat finds the home directory as Node's <code>os.homedir()</code> and pi-automations do: <code>USERPROFILE</code> on
+Windows, <code>HOME</code> elsewhere.</li>
+<li><a href="aat-cli.html">CLI.md</a> defines how a name on the command line resolves and what each exit code means;
+<code>aat run</code> passes on the run's own code.</li>
+<li><code>aat run &lt;name&gt;</code> starts <code>aat fire --key &lt;key&gt; --trigger manual --follow</code> and prints the run's live
+file as it grows. After <code>aat fire</code> exits, <code>aat run</code> reads the file to the end and removes it, so the
+last post hook's line is never lost. <code>--detach</code> (and the TUI's run) start the same command
+detached, without <code>--follow</code>.</li>
+<li>fm draws charts. aat finds it as pi-automations does: config <code>fm-path</code> (with no fallback), then
+<code>FM_BIN</code>, then <code>fm</code> on PATH, and accepts it when <code>fm render --help</code> succeeds. The host runs
+<code>fm render --plan - --state &lt;file&gt; --format text</code>; any failure is one line, and the TUI shows the
+step list instead.</li>
+<li><code>src/seams.rs</code> is where <code>aat</code> calls <code>aat-run</code> (<code>fire</code>, the progress verbs) and <code>aat-clock</code> (<code>tick</code>,
+<code>serve</code>, <code>watcher</code>).</li>
+<li><code>aat fire</code> (<a href="#fire-contract">Fire contract</a>) prints nothing on stdout and exits 0 ok, 10 skipped,
+20 failed, 30 aborted, or 2 when refused with no record (a manual run while one is going, an
+invalid or missing automation).</li>
+</ul>
+<h2 id="runs-aat-run"><a class="heading-anchor" href="#runs-aat-run" aria-label="Link to this section: Runs ( aat-run )"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>Runs (<code>aat-run</code>)</h2>
+<p><code>aat_run::fire(located, FireOptions, &amp;FireDeps) -&gt; Result&lt;RunRecord, FireError&gt;</code> follows
+<code>adding-support.md</code> &quot;Run&quot; step by step; the module doc of <code>crates/aat-run/src/fire.rs</code> lists the
+order. Choices beyond the spec, all as pi-automations makes them unless noted:</p>
+<ul>
+<li>The lock's <code>budgetMs</code> is the timeout, plus <code>hook-timeout</code> times (post hooks + 1), plus 5
+minutes. <code>fire</code> sweeps a lock whose owner is gone (recording <code>aborted: host stopped</code>) and takes it
+at once.</li>
+<li>Checks after the lock, each a <code>skipped</code> record: repository gone, <code>not armed</code>, <code>consent expired</code>,
+<code>changed since armed: &lt;files&gt;</code>, no agent CLI set (naming <code>aat agent set</code> and <code>default-agent</code>), a
+model the CLI refuses (<code>error.kind</code> <code>model-unavailable</code>), prompt hooks on a CLI without resume,
+the CLI not found. A change leaves the automation's consent in place, so the list keeps saying
+what changed.</li>
+<li>The body runs in the repository root (repository scope) or the automation folder; with
+<code>[automations.&quot;&lt;key&gt;&quot;] worktree = true</code>, in <code>git worktree add --detach &lt;temp&gt;/aat-wt-&lt;run id&gt;</code>,
+removed after. If aat cannot make the worktree, the run is <code>failed</code> (<code>host</code>) and does not fall
+back to the usual folder.</li>
+<li>Hook scripts get the scrubbed environment plus <code>AUTOMATION_*</code>; agent turns keep the login
+environment. Both get <code>AAT_RUN</code>, <code>AAT_STATE_DIR</code>, <code>AAT_NODE</code> (when the chart has the node) and
+<code>aat</code>'s folder first on <code>PATH</code>. Post hooks get <code>AUTOMATION_REASON</code>, set to the reason, else the
+error kind.</li>
+<li>A polling thread reads stop requests with <code>aat_state::stop_requested</code>, which clears a stale
+request. For a request naming this run, it creates <code>locks/&lt;slug&gt;.&lt;run id&gt;.halt</code>; the process
+runner stops the pre hooks and agent turns when that file appears. Post hooks still run after a
+stop or a timeout, bounded only by <code>hook-timeout</code>.</li>
+<li>Agent output: every raw line goes to <code>sessions/&lt;run id&gt;.jsonl</code> (the record's <code>session.file</code>,
+<code>format</code> from the adapter); parsed <code>LiveEvent</code>s, and hook starts and ends, go to
+<code>locks/&lt;slug&gt;.live</code> (partial text throttled to one a second, everything bounded). The run removes
+the file when it ends, except under <code>--follow</code>, where the <code>aat run</code> that follows it drains and
+removes it. A failed write to the live file never fails the run.</li>
+<li>Progress: a run opens <code>progress/&lt;run id&gt;.json</code> with the chart from <code>aat_spec::read_chart</code> (no
+chart: notes and a message only) and moves <code>pre&lt;i&gt;</code>, <code>body</code>, <code>post&lt;i&gt;</code> itself; the record gets
+the steps in flow order. <code>aat_run::progress_cli(argv, env, now)</code> implements the in-run verbs, exit
+0 ok, 1 usage, 2 refused.</li>
+<li>A run of an automation with a schedule, manual runs included, claims the instant it covers in
+<code>state.json</code> (<code>scheduledFor</code>, else the newest cron instant at or before its start), only ever
+moving the claim forward, so catch-up does not repeat it.</li>
+</ul>
+<h2 id="the-clock"><a class="heading-anchor" href="#the-clock" aria-label="Link to this section: The clock"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>The clock</h2>
+<p><code>aat-clock</code> runs one tick (<code>aat_clock::tick</code>) a minute, started by the watcher job, <code>aat serve</code> or
+<code>aat tick</code> by hand. A tick:</p>
+<ol>
+<li>takes the tick lock (<code>tick.lock</code>, replaced when its owner is dead or it is five minutes old);</li>
+<li>sweeps abandoned run locks;</li>
+<li>discovers automations in the user root and every repository root registered in <code>state.json</code>
+(<code>aat tick</code> by hand adds the working directory's);</li>
+<li>decides each automation's state;</li>
+<li>for each armed schedule, runs <code>decide_one</code>, the pure port of pi-automations' <code>decideTick</code>:
+grace, catch-up (<code>skip</code> writes one <code>missed</code> record with a <code>count</code>; <code>once</code> starts one late run
+for the newest instant unless the next is due within the grace period), the <code>catch-up-window</code>
+look-back, claims, and a per-key stagger. It writes the claim to <code>state.json</code> before the run
+starts. A run still going gets a <code>skipped</code> record, and a start that fails gets one <code>failed</code>
+record (<code>error.kind</code> <code>host</code>);</li>
+<li>runs the due watch checks (<code>watch-scripts.md</code>) side by side, each limited to the hook timeout,
+capped at two minutes;</li>
+<li>writes <code>lastTickAt</code> (rewound to just before any instant still held by its stagger) and
+<code>lastTickBy</code>.</li>
+</ol>
+<p>Listings call <code>aat_clock::next_fire</code> (the next instant plus the stagger) and
+<code>aat_clock::next_check</code>, so the TUI shows what the tick will do.</p>
+<p>aat differs from pi-automations here on purpose: the look-back starts no earlier than the
+automation's consent (<code>armedAt</code>). pi-automations looks back the whole window on a first tick, so
+an automation armed a minute ago can get a <code>missed</code> record for instants before anyone armed it.</p>
+<h3 id="fire-contract"><a class="heading-anchor" href="#fire-contract" aria-label="Link to this section: Fire contract"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>Fire contract</h3>
+<p>The clock never runs a body itself. It starts this same executable, detached
+(<code>aat_clock::DetachedSpawn</code>; Windows: <code>DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP |
+CREATE_NO_WINDOW</code>, breaking away from the tick's job object when allowed; Unix: its own process
+group, null stdin), with <code>AAT_HOME</code> set to the tick's state folder and output appended to
+<code>logs/&lt;slug&gt;.log</code>:</p>
+<div class="code-block"><div class="code-body"><button type="button" class="copy-code" aria-label="Copy code" hidden><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button><pre tabindex="0"><code class="language-text">aat fire --key &lt;automation key&gt; --trigger &lt;schedule|watch|manual&gt; [--scheduled-for &lt;iso&gt;] [--late]</code></pre></div></div>
+<ul>
+<li><code>--scheduled-for</code> is the cron instant (not the staggered time) as <code>aat-state</code>'s ISO form,
+<code>2026-09-17T07:00:00.000Z</code>; schedule runs only. The tick has already claimed exactly this string.</li>
+<li><code>--late</code> marks a <code>catch-up: once</code> run that started past its grace period.</li>
+<li>A watch run gets <code>--trigger watch</code> and nothing else: the script's output is never passed on.</li>
+<li><code>--follow</code> (hidden) is for <code>aat run</code> only: the run leaves its live file for the follower to drain.</li>
+</ul>
+<p>The watcher job runs <code>aat tick --by job</code> (<code>--by</code> is hidden; by hand it is <code>cli</code>). A quiet job tick
+prints nothing, since its output is appended to <code>logs/tick.log</code>.</p>
+<h3 id="the-watcher"><a class="heading-anchor" href="#the-watcher" aria-label="Link to this section: The watcher"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>The watcher</h3>
+<p><code>aat watcher start|stop|status</code> register, remove and report one OS job per user and state folder
+(<code>aat_clock::watcher</code>). Every job runs a wrapper in <code>&lt;state&gt;/watcher/</code> that sets an allow-list of
+variables carried from the shell that ran <code>start</code> (<code>AAT_HOME</code>, <code>PATH</code>, <code>HOME</code>, <code>LANG</code> and a few
+more, never a credential-shaped name), then runs <code>aat</code> by its absolute path; when that binary is
+gone, the wrapper removes the job instead. aat refuses to write a job file that contains a
+credential's value. <code>watcher.json</code> in the state folder records what was registered; <code>aat serve</code>
+refuses while it exists, and <code>start</code> refuses while <code>aat serve</code> ticked in the last two minutes.
+<code>start</code> asks the scheduler for a run at once and
+waits up to 90 seconds for a tick with <code>lastTickBy: job</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>OS</th><th>Job</th><th>Notes</th></tr></thead>
+<tbody><tr><td>Windows</td><td>Task Scheduler task <code>agent-automations\tick</code> (<code>schtasks /Create /XML</code>, UTF-16): every minute, interactive token, least privilege, hidden, <code>IgnoreNew</code>, start when available</td><td>Runs <code>conhost.exe --headless cmd.exe /d /c &lt;state&gt;\watcher\aat-tick.cmd</code>. pi-automations hides its console with a <code>wscript.exe</code> VBScript shim; VBScript is being removed from Windows, and the console host's headless mode creates no window at all. A state folder path with <code>&amp; &lt; &gt; ( ) @ ^ | %</code> is refused (cmd.exe would read it as syntax).</td></tr>
+<tr><td>macOS</td><td>LaunchAgent <code>io.agentautomations.aat.tick</code> in <code>~/Library/LaunchAgents</code>, <code>launchctl bootstrap gui/&lt;uid&gt;</code></td><td>An empty <code>StartCalendarInterval</code> (every minute on the minute, as pi-automations), not <code>StartInterval 60</code>; <code>ProcessType Background</code>; <code>AbandonProcessGroup</code>.</td></tr>
+<tr><td>Linux</td><td>systemd user <code>aat-tick.service</code> (oneshot, <code>KillMode=process</code> so runs outlive the tick) and <code>aat-tick.timer</code> (<code>OnCalendar=*-*-* *:*:00</code>, <code>Persistent=true</code>), <code>systemctl --user enable --now</code></td><td>Without a systemd user session, a crontab line marked <code># aat-tick (aat watcher)</code>. A user timer stops at logout unless <code>loginctl enable-linger</code>.</td></tr></tbody>
+</table></div>
+<p>Generators are pure and tested on every OS; scheduler commands go through <code>watcher::Exec</code>, faked in
+tests. Two ignored tests cover the real Windows path. They register <code>aat-test-&lt;random&gt;</code> tasks
+against a temporary state folder and always delete them:
+<code>cargo test -p aat-clock --test windows_watcher -- --ignored</code>.</p>
+<h2 id="agent-clis"><a class="heading-anchor" href="#agent-clis" aria-label="Link to this section: Agent CLIs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>Agent CLIs</h2>
+<p>An adapter is pure: <code>plan_turn</code> builds the command, <code>parse_line</code> turns output lines into
+<code>LiveEvent</code>s, and <code>finish</code> decides the answer. <code>aat-run</code> spawns, streams, times out and kills, so the
+adapter tests replay recorded output from <code>crates/aat-agents/tests/fixtures/&lt;cli&gt;/</code> with no CLI
+installed. <a href="aat-agents.html">AGENTS.md</a> has each CLI's flags, models, resume and limits.</p>
+<ul>
+<li>The consent preview shows <code>CommandPlan::display</code>, the exact command, flags included.</li>
+<li>Prompt hooks continue the body's session. A CLI without resume refuses prompt hooks at
+validation time: <code>hooks.pre[0].prompt: &lt;cli&gt; cannot continue a session — use a script hook, or another agent</code>.</li>
+</ul>
+<p>The agent learns the progress commands from a block aat appends to every prompt (as pa does), with
+<code>AAT_RUN</code>, <code>AAT_NODE</code> and <code>AAT_STATE_DIR</code> in its environment: <code>aat step|next|say|note|message|status</code>.</p>
+<h2 id="conventions"><a class="heading-anchor" href="#conventions" aria-label="Link to this section: Conventions"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>Conventions</h2>
+<ul>
+<li>Rust 2024, stable. No <code>unsafe</code>. No async runtime: threads and <code>std::process</code>.</li>
+<li>Every user-facing refusal is one line, <code>&lt;field path&gt;: &lt;what is wrong&gt; — &lt;what fixes it&gt;</code>.</li>
+<li>Errors in libraries are typed (<code>thiserror</code> is fine); <code>anyhow</code> only in the <code>aat</code> binary.</li>
+<li>Every module has unit tests; anything that touches the clock takes <code>now</code> as a parameter.</li>
+<li>Paths: <code>std::path</code> only; never build paths with <code>/</code> or <code>\</code>. Tests run on all three OSes in CI.</li>
+<li>Cross-platform process handling: no signals for stop (Windows kills outright); the run polls its
+stop file.</li>
+<li><code>cargo fmt</code>, <code>cargo clippy --workspace --all-targets -- -D warnings</code> and <code>cargo test --workspace</code>
+must pass before a PR.</li>
+</ul>
+      </div>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="aat-agents.html" rel="prev"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 7l-5 5 5 5"/></svg><span class="pager-text"><span class="pager-label">Previous</span><span class="pager-title">Agent CLIs</span></span></a><a class="pager-next" href="pi-automations.html" rel="next"><span class="pager-text"><span class="pager-label">Next</span><span class="pager-title">Overview</span></span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 7l5 5-5 5"/></svg></a></nav>
+    </article>
+    <footer class="site-footer">
+      <p>Agent Automations · Draft 0.1.0 · <a href="llms.txt">llms.txt</a> · <a href="https://github.com/lucas-stanford/agent-automations" rel="noopener">Source</a></p>
+    </footer>
+  </main>
+  <aside class="toc-column"><nav class="toc" aria-label="On this page"><p class="toc-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h10M4 18h13"/></svg><span>On this page</span></p><ul><li class="toc-l2"><a href="#independence-from-pi-automations">Independence from pi-automations</a></li><li class="toc-l2"><a href="#crates">Crates</a></li><li class="toc-l2"><a href="#state-folder">State folder</a></li><li class="toc-l2"><a href="#discovery-roots">Discovery roots</a></li><li class="toc-l2"><a href="#the-aat-binary">The aat binary</a></li><li class="toc-l2"><a href="#runs-aat-run">Runs ( aat-run )</a></li><li class="toc-l2"><a href="#the-clock">The clock</a></li><li class="toc-l3"><a href="#fire-contract">Fire contract</a></li><li class="toc-l3"><a href="#the-watcher">The watcher</a></li><li class="toc-l2"><a href="#agent-clis">Agent CLIs</a></li><li class="toc-l2"><a href="#conventions">Conventions</a></li></ul></nav></aside>
+</div>
+<script type="application/json" id="page-markdown">"# Architecture\n\n`aat` is a Rust host for the Agent Automations format. The specification in the repository's\n`site/content/` defines how it must behave:\n\n| File | What it decides |\n|---|---|\n| `specification.md` | The format, validation order, consent, runs, records |\n| `adding-support.md` | What a host must, should and may do, step by step |\n| `validation.md` | Every refusal message, each with a file that produces it (55) |\n| `watch-scripts.md` | The `on.watch` contract |\n| `flowcharts.md` | Charts and strict flow |\n\nWhere the spec leaves a choice open, aat follows pi-automations, another host written in\nTypeScript, unless this document says otherwise. `docs/GLOSSARY-pa.md` is adapted from its\n`docs/GLOSSARY.md`; use its words in every message and screen.\n\n## Independence from pi-automations\n\n`aat` never writes pi-automations' state and reads only one file of it: pa's `trust.json`\n(`$PI_AGENT_DIR/pi-automations/trust.json`, default `~/.pi/agent/pi-automations/trust.json`), to\nwarn that an automation armed in both hosts would run twice.\n\n## Crates\n\n```\naat (bin) --> aat-tui --> aat-model\n   |\n   +--> aat-clock --> aat-run --> aat-spec, aat-state, aat-agents --> aat-model\n```\n\n| Crate | Owns | Must not |\n|---|---|---|\n| `aat-model` | Plain types and traits: `Automation`, `RunRecord`, `TrustFile`, `StateFile`, `Config`, `LiveEvent`, `AgentCli`, `Host`, `StatePaths` | do I/O |\n| `aat-spec` | Frontmatter parse (YAML 1.2), validation in spec order with spec messages, cron grammar and arithmetic, discovery, interpreters, digests, Mermaid chart parse, `flow_order`, strict flow | write anything |\n| `aat-state` | State folder resolution, `config.toml`, consent (`trust.json`), `state.json`, run locks, records (`runs/*.jsonl`), retention, stop files, the progress store | start processes |\n| `aat-agents` | One `AgentCli` adapter per CLI, CLI detection, a fake CLI for tests | spawn agent turns (it only plans them) |\n| `aat-run` | `fire`: lock, consent recheck, timeout, pre hooks, body, post hooks, record; script execution; hook environment; live file; progress verbs | know about the TUI |\n| `aat-clock` | `tick`: schedules, grace, catch-up, claims, stagger, watches, tick lock; `serve`; the OS watcher job | |\n| `aat-tui` | Every screen, against the `Host` trait; `fake::FakeHost` for tests | touch the filesystem directly |\n| `aat` | clap CLI; the real `Host`; wiring | |\n\n## State folder\n\n`AAT_HOME` if set, else the per-OS folder in the [README](aat.html#where-state-lives).\n`aat_model::StatePaths` defines the layout, and the folder is mode 0700 on Unix. `aat-state` writes\nevery JSON file atomically (a temp file in the same folder, then a rename) under a lock, as one\nread-change-write.\n\nIn `aat-state`:\n\n- The read-change-write lock is an OS lock (`flock`/`LockFileEx`) on a sidecar `\u003cfile>.lock`, so a\n  process that dies holding it releases it.\n- A run lock (`locks/\u003cslug>.lock`) is an `O_EXCL` create holding `RunLockInfo` (pid and its start\n  time) plus `key`, `scheduledFor` and an optional `budgetMs`. It is stale when the owner is gone,\n  its pid now belongs to a process that started at another time, or it outlived its budget; the\n  sweep writes `aborted: host stopped` with the run's progress folded in.\n- `locks/\u003cslug>.stop` names the run to stop. A stop file naming another run is stale, and the\n  reader clears it.\n- `progress/\u003crun id>.json` holds the run's events (`{\"version\":1,\"events\":[…]}`), folded into a\n  snapshot on read; `progress/\u003crun id>.closed` is the tombstone, swept after a week. Chart nodes\n  come from `aat-spec` when the progress is opened.\n- aat refuses a `config.toml` with an unknown key or a value it cannot use, whole and in one line.\n\n## Discovery roots\n\naat reads only the two roots the specification names: `~/.agents/automations/` (user) and\n`.agents/automations/` from the working directory up to the repository root (repository). Keys are\n`\u003cscope>:\u003croot path>:\u003cname>`. Arming a repository automation registers its repository root in\n`state.json`, so the TUI, `aat list` and the tick find it from any folder.\n\n## The `aat` binary\n\n- aat finds the home directory as Node's `os.homedir()` and pi-automations do: `USERPROFILE` on\n  Windows, `HOME` elsewhere.\n- [CLI.md](aat-cli.html) defines how a name on the command line resolves and what each exit code means;\n  `aat run` passes on the run's own code.\n- `aat run \u003cname>` starts `aat fire --key \u003ckey> --trigger manual --follow` and prints the run's live\n  file as it grows. After `aat fire` exits, `aat run` reads the file to the end and removes it, so the\n  last post hook's line is never lost. `--detach` (and the TUI's run) start the same command\n  detached, without `--follow`.\n- fm draws charts. aat finds it as pi-automations does: config `fm-path` (with no fallback), then\n  `FM_BIN`, then `fm` on PATH, and accepts it when `fm render --help` succeeds. The host runs\n  `fm render --plan - --state \u003cfile> --format text`; any failure is one line, and the TUI shows the\n  step list instead.\n- `src/seams.rs` is where `aat` calls `aat-run` (`fire`, the progress verbs) and `aat-clock` (`tick`,\n  `serve`, `watcher`).\n- `aat fire` ([Fire contract](#fire-contract)) prints nothing on stdout and exits 0 ok, 10 skipped,\n  20 failed, 30 aborted, or 2 when refused with no record (a manual run while one is going, an\n  invalid or missing automation).\n\n## Runs (`aat-run`)\n\n`aat_run::fire(located, FireOptions, &FireDeps) -> Result\u003cRunRecord, FireError>` follows\n`adding-support.md` \"Run\" step by step; the module doc of `crates/aat-run/src/fire.rs` lists the\norder. Choices beyond the spec, all as pi-automations makes them unless noted:\n\n- The lock's `budgetMs` is the timeout, plus `hook-timeout` times (post hooks + 1), plus 5\n  minutes. `fire` sweeps a lock whose owner is gone (recording `aborted: host stopped`) and takes it\n  at once.\n- Checks after the lock, each a `skipped` record: repository gone, `not armed`, `consent expired`,\n  `changed since armed: \u003cfiles>`, no agent CLI set (naming `aat agent set` and `default-agent`), a\n  model the CLI refuses (`error.kind` `model-unavailable`), prompt hooks on a CLI without resume,\n  the CLI not found. A change leaves the automation's consent in place, so the list keeps saying\n  what changed.\n- The body runs in the repository root (repository scope) or the automation folder; with\n  `[automations.\"\u003ckey>\"] worktree = true`, in `git worktree add --detach \u003ctemp>/aat-wt-\u003crun id>`,\n  removed after. If aat cannot make the worktree, the run is `failed` (`host`) and does not fall\n  back to the usual folder.\n- Hook scripts get the scrubbed environment plus `AUTOMATION_*`; agent turns keep the login\n  environment. Both get `AAT_RUN`, `AAT_STATE_DIR`, `AAT_NODE` (when the chart has the node) and\n  `aat`'s folder first on `PATH`. Post hooks get `AUTOMATION_REASON`, set to the reason, else the\n  error kind.\n- A polling thread reads stop requests with `aat_state::stop_requested`, which clears a stale\n  request. For a request naming this run, it creates `locks/\u003cslug>.\u003crun id>.halt`; the process\n  runner stops the pre hooks and agent turns when that file appears. Post hooks still run after a\n  stop or a timeout, bounded only by `hook-timeout`.\n- Agent output: every raw line goes to `sessions/\u003crun id>.jsonl` (the record's `session.file`,\n  `format` from the adapter); parsed `LiveEvent`s, and hook starts and ends, go to\n  `locks/\u003cslug>.live` (partial text throttled to one a second, everything bounded). The run removes\n  the file when it ends, except under `--follow`, where the `aat run` that follows it drains and\n  removes it. A failed write to the live file never fails the run.\n- Progress: a run opens `progress/\u003crun id>.json` with the chart from `aat_spec::read_chart` (no\n  chart: notes and a message only) and moves `pre\u003ci>`, `body`, `post\u003ci>` itself; the record gets\n  the steps in flow order. `aat_run::progress_cli(argv, env, now)` implements the in-run verbs, exit\n  0 ok, 1 usage, 2 refused.\n- A run of an automation with a schedule, manual runs included, claims the instant it covers in\n  `state.json` (`scheduledFor`, else the newest cron instant at or before its start), only ever\n  moving the claim forward, so catch-up does not repeat it.\n\n## The clock\n\n`aat-clock` runs one tick (`aat_clock::tick`) a minute, started by the watcher job, `aat serve` or\n`aat tick` by hand. A tick:\n\n1. takes the tick lock (`tick.lock`, replaced when its owner is dead or it is five minutes old);\n2. sweeps abandoned run locks;\n3. discovers automations in the user root and every repository root registered in `state.json`\n   (`aat tick` by hand adds the working directory's);\n4. decides each automation's state;\n5. for each armed schedule, runs `decide_one`, the pure port of pi-automations' `decideTick`:\n   grace, catch-up (`skip` writes one `missed` record with a `count`; `once` starts one late run\n   for the newest instant unless the next is due within the grace period), the `catch-up-window`\n   look-back, claims, and a per-key stagger. It writes the claim to `state.json` before the run\n   starts. A run still going gets a `skipped` record, and a start that fails gets one `failed`\n   record (`error.kind` `host`);\n6. runs the due watch checks (`watch-scripts.md`) side by side, each limited to the hook timeout,\n   capped at two minutes;\n7. writes `lastTickAt` (rewound to just before any instant still held by its stagger) and\n   `lastTickBy`.\n\nListings call `aat_clock::next_fire` (the next instant plus the stagger) and\n`aat_clock::next_check`, so the TUI shows what the tick will do.\n\naat differs from pi-automations here on purpose: the look-back starts no earlier than the\nautomation's consent (`armedAt`). pi-automations looks back the whole window on a first tick, so\nan automation armed a minute ago can get a `missed` record for instants before anyone armed it.\n\n### Fire contract\n\nThe clock never runs a body itself. It starts this same executable, detached\n(`aat_clock::DetachedSpawn`; Windows: `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP |\nCREATE_NO_WINDOW`, breaking away from the tick's job object when allowed; Unix: its own process\ngroup, null stdin), with `AAT_HOME` set to the tick's state folder and output appended to\n`logs/\u003cslug>.log`:\n\n```text\naat fire --key \u003cautomation key> --trigger \u003cschedule|watch|manual> [--scheduled-for \u003ciso>] [--late]\n```\n\n- `--scheduled-for` is the cron instant (not the staggered time) as `aat-state`'s ISO form,\n  `2026-09-17T07:00:00.000Z`; schedule runs only. The tick has already claimed exactly this string.\n- `--late` marks a `catch-up: once` run that started past its grace period.\n- A watch run gets `--trigger watch` and nothing else: the script's output is never passed on.\n- `--follow` (hidden) is for `aat run` only: the run leaves its live file for the follower to drain.\n\nThe watcher job runs `aat tick --by job` (`--by` is hidden; by hand it is `cli`). A quiet job tick\nprints nothing, since its output is appended to `logs/tick.log`.\n\n### The watcher\n\n`aat watcher start|stop|status` register, remove and report one OS job per user and state folder\n(`aat_clock::watcher`). Every job runs a wrapper in `\u003cstate>/watcher/` that sets an allow-list of\nvariables carried from the shell that ran `start` (`AAT_HOME`, `PATH`, `HOME`, `LANG` and a few\nmore, never a credential-shaped name), then runs `aat` by its absolute path; when that binary is\ngone, the wrapper removes the job instead. aat refuses to write a job file that contains a\ncredential's value. `watcher.json` in the state folder records what was registered; `aat serve`\nrefuses while it exists, and `start` refuses while `aat serve` ticked in the last two minutes.\n`start` asks the scheduler for a run at once and\nwaits up to 90 seconds for a tick with `lastTickBy: job`.\n\n| OS | Job | Notes |\n|---|---|---|\n| Windows | Task Scheduler task `agent-automations\\tick` (`schtasks /Create /XML`, UTF-16): every minute, interactive token, least privilege, hidden, `IgnoreNew`, start when available | Runs `conhost.exe --headless cmd.exe /d /c \u003cstate>\\watcher\\aat-tick.cmd`. pi-automations hides its console with a `wscript.exe` VBScript shim; VBScript is being removed from Windows, and the console host's headless mode creates no window at all. A state folder path with `& \u003c > ( ) @ ^ \\| %` is refused (cmd.exe would read it as syntax). |\n| macOS | LaunchAgent `io.agentautomations.aat.tick` in `~/Library/LaunchAgents`, `launchctl bootstrap gui/\u003cuid>` | An empty `StartCalendarInterval` (every minute on the minute, as pi-automations), not `StartInterval 60`; `ProcessType Background`; `AbandonProcessGroup`. |\n| Linux | systemd user `aat-tick.service` (oneshot, `KillMode=process` so runs outlive the tick) and `aat-tick.timer` (`OnCalendar=*-*-* *:*:00`, `Persistent=true`), `systemctl --user enable --now` | Without a systemd user session, a crontab line marked `# aat-tick (aat watcher)`. A user timer stops at logout unless `loginctl enable-linger`. |\n\nGenerators are pure and tested on every OS; scheduler commands go through `watcher::Exec`, faked in\ntests. Two ignored tests cover the real Windows path. They register `aat-test-\u003crandom>` tasks\nagainst a temporary state folder and always delete them:\n`cargo test -p aat-clock --test windows_watcher -- --ignored`.\n\n## Agent CLIs\n\nAn adapter is pure: `plan_turn` builds the command, `parse_line` turns output lines into\n`LiveEvent`s, and `finish` decides the answer. `aat-run` spawns, streams, times out and kills, so the\nadapter tests replay recorded output from `crates/aat-agents/tests/fixtures/\u003ccli>/` with no CLI\ninstalled. [AGENTS.md](aat-agents.html) has each CLI's flags, models, resume and limits.\n\n- The consent preview shows `CommandPlan::display`, the exact command, flags included.\n- Prompt hooks continue the body's session. A CLI without resume refuses prompt hooks at\n  validation time: `hooks.pre[0].prompt: \u003ccli> cannot continue a session — use a script hook, or another agent`.\n\nThe agent learns the progress commands from a block aat appends to every prompt (as pa does), with\n`AAT_RUN`, `AAT_NODE` and `AAT_STATE_DIR` in its environment: `aat step|next|say|note|message|status`.\n\n## Conventions\n\n- Rust 2024, stable. No `unsafe`. No async runtime: threads and `std::process`.\n- Every user-facing refusal is one line, `\u003cfield path>: \u003cwhat is wrong> — \u003cwhat fixes it>`.\n- Errors in libraries are typed (`thiserror` is fine); `anyhow` only in the `aat` binary.\n- Every module has unit tests; anything that touches the clock takes `now` as a parameter.\n- Paths: `std::path` only; never build paths with `/` or `\\`. Tests run on all three OSes in CI.\n- Cross-platform process handling: no signals for stop (Windows kills outright); the run polls its\n  stop file.\n- `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings` and `cargo test --workspace`\n  must pass before a PR.\n"</script>
+<script src="search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</body>
+</html>

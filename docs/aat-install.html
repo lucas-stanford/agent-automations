@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installing aat — Agent Automations</title>
+<meta name="description" content="Build and install the aat host.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="aat-install.md" title="This page as Markdown">
+<script>(function(){var d=document.documentElement;d.className=d.className.replace("no-js","js");try{var t=localStorage.getItem("aat-theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">Agent Automations</a>
+    <div class="search" role="search">
+      <label class="search-box">
+        <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></span>
+        <span class="visually-hidden">Search the documentation</span>
+        <input id="search-input" type="search" placeholder="Search..." autocomplete="off" spellcheck="false" aria-controls="search-results" aria-expanded="false" aria-autocomplete="list" role="combobox">
+        <kbd class="search-kbd">Ctrl K</kbd>
+      </label>
+      <div id="search-results" class="search-results" role="listbox" aria-label="Search results" hidden></div>
+    </div>
+    <div class="topbar-right">
+      <a class="repo-link" href="https://github.com/lucas-stanford/agent-automations" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg><span>lucas-stanford/agent-automations</span></a>
+      <button type="button" class="theme-toggle" aria-label="Switch to light theme" hidden><span class="icon-sun"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></span><span class="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg></span></button>
+    </div>
+  </div>
+</header>
+<details class="mobile-nav">
+  <summary><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="mobile-nav-current">Install</span></summary>
+  <nav aria-label="Documentation"><div class="nav-group"><ul><li><a href="index.html">Overview</a></li><li><a href="specification.html">Specification</a></li><li><a href="validation.html">Validation messages</a></li><li><a href="hosts.html">Hosts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">For automation authors</p><ul><li><a href="quickstart.html">Quickstart</a></li><li><a href="best-practices.html">Best practices</a></li><li><a href="watch-scripts.html">Watch scripts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">For host implementors</p><ul><li><a href="adding-support.html">Adding automations support</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Agent skill</p><ul><li><a href="skill.html">SKILL.md</a></li><li><a href="skill-checklist.html">references/checklist.md</a></li><li><a href="skill-specification.html">references/specification.md</a></li><li><a href="skill-watch-scripts.html">references/watch-scripts.md</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Optional</p><ul><li><a href="flowcharts.html">Flowcharts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">aat</p><ul><li><a href="aat.html">Overview</a></li><li><a href="aat-install.html" aria-current="page">Install</a></li><li><a href="aat-cli.html">Commands</a></li><li><a href="aat-config.html">Configuration</a></li><li><a href="aat-agents.html">Agent CLIs</a></li><li><a href="aat-architecture.html">Architecture</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Example: pi-automations</p><ul><li><a href="pi-automations.html">Overview</a></li><li><a href="quickstart-pi.html">Quickstart</a></li><li><a href="reporting.html">Progress and notes</a></li><li><a href="pi-implementation.html">How it implements the spec</a></li></ul></div></nav>
+</details>
+<div class="layout">
+  <aside class="sidebar">
+    <nav aria-label="Documentation"><div class="nav-group"><ul><li><a href="index.html">Overview</a></li><li><a href="specification.html">Specification</a></li><li><a href="validation.html">Validation messages</a></li><li><a href="hosts.html">Hosts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">For automation authors</p><ul><li><a href="quickstart.html">Quickstart</a></li><li><a href="best-practices.html">Best practices</a></li><li><a href="watch-scripts.html">Watch scripts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">For host implementors</p><ul><li><a href="adding-support.html">Adding automations support</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Agent skill</p><ul><li><a href="skill.html">SKILL.md</a></li><li><a href="skill-checklist.html">references/checklist.md</a></li><li><a href="skill-specification.html">references/specification.md</a></li><li><a href="skill-watch-scripts.html">references/watch-scripts.md</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Optional</p><ul><li><a href="flowcharts.html">Flowcharts</a></li></ul></div><div class="nav-group"><p class="nav-group-label">aat</p><ul><li><a href="aat.html">Overview</a></li><li><a href="aat-install.html" aria-current="page">Install</a></li><li><a href="aat-cli.html">Commands</a></li><li><a href="aat-config.html">Configuration</a></li><li><a href="aat-agents.html">Agent CLIs</a></li><li><a href="aat-architecture.html">Architecture</a></li></ul></div><div class="nav-group"><p class="nav-group-label">Example: pi-automations</p><ul><li><a href="pi-automations.html">Overview</a></li><li><a href="quickstart-pi.html">Quickstart</a></li><li><a href="reporting.html">Progress and notes</a></li><li><a href="pi-implementation.html">How it implements the spec</a></li></ul></div></nav>
+  </aside>
+  <main id="content" class="content" tabindex="-1">
+    <article>
+      <header class="page-header">
+<p class="eyebrow">aat</p>
+        <div class="page-title-row">
+          <h1>Installing aat</h1>
+          <div class="page-actions">
+            <button type="button" class="copy-page" hidden><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><span class="copy-page-label">Copy page</span></button>
+            <details class="page-menu">
+              <summary aria-label="More ways to read this page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 10l5 5 5-5"/></svg></summary>
+              <div class="page-menu-items">
+                <a href="aat-install.md">View as Markdown</a>
+                <a href="llms.txt">llms.txt</a>
+              </div>
+            </details>
+          </div>
+        </div>
+        <p class="lead">Build and install the aat host.</p>
+      </header>
+      <div class="prose">
+<p><code>aat</code> is one binary with no runtime to install. You build it from source with Rust 1.85 or later
+(<a href="https://rustup.rs" class="external" rel="noopener">rustup.rs</a>), on Windows, macOS or Linux.</p>
+<div class="code-block"><div class="code-body"><button type="button" class="copy-code" aria-label="Copy code" hidden><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button><pre tabindex="0"><code class="language-sh"><span class="tok-fn">git</span> clone https://github.com/lucas-stanford/agent-automations
+<span class="tok-fn">cd</span> agent-automations/aat
+<span class="tok-fn">cargo</span> install <span class="tok-kw">--locked</span> <span class="tok-kw">--path</span> crates/aat</code></pre></div></div>
+<p>Cargo puts <code>aat</code> in <code>~/.cargo/bin</code> (<code>%USERPROFILE%\.cargo\bin</code> on Windows), which rustup adds to
+your PATH. Check it with <code>aat --version</code>.</p>
+<p>Other software, including <a href="https://gburgyan.github.io/aat/install/" class="external" rel="noopener">Adaptive API Toolkit</a>, also
+uses the <code>aat</code> command. Check <code>command -v aat</code> on macOS or Linux, or <code>Get-Command aat</code> in
+PowerShell. If another executable takes precedence, run this host by its full path rather than
+overriding the other tool.</p>
+<p>To upgrade, pull and run the same <code>cargo install</code> again. On Windows it cannot replace <code>aat.exe</code>
+while a run is using it; if it fails for that reason, wait for the run to end and try again.</p>
+<h2 id="uninstall"><a class="heading-anchor" href="#uninstall" aria-label="Link to this section: Uninstall"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></a>Uninstall</h2>
+<ol>
+<li>Stop the watcher for this state folder, if one is registered: <code>aat watcher stop</code>.</li>
+<li>Remove the binary: <code>cargo uninstall aat</code>.</li>
+<li>If you also want aat's state gone (consent, run records, config), delete its state folder:
+<code>AAT_HOME</code> if you set it, else the per-OS folder in the
+<a href="aat.html#where-state-lives">README</a>.</li>
+</ol>
+<p>Uninstalling leaves your automations alone, both in <code>~/.agents/automations/</code> and in each
+repository's <code>.agents/automations/</code>.</p>
+      </div>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="aat.html" rel="prev"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 7l-5 5 5 5"/></svg><span class="pager-text"><span class="pager-label">Previous</span><span class="pager-title">Overview</span></span></a><a class="pager-next" href="aat-cli.html" rel="next"><span class="pager-text"><span class="pager-label">Next</span><span class="pager-title">Commands</span></span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 7l5 5-5 5"/></svg></a></nav>
+    </article>
+    <footer class="site-footer">
+      <p>Agent Automations · Draft 0.1.0 · <a href="llms.txt">llms.txt</a> · <a href="https://github.com/lucas-stanford/agent-automations" rel="noopener">Source</a></p>
+    </footer>
+  </main>
+  <aside class="toc-column"><nav class="toc" aria-label="On this page"><p class="toc-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h10M4 18h13"/></svg><span>On this page</span></p><ul><li class="toc-l2"><a href="#uninstall">Uninstall</a></li></ul></nav></aside>
+</div>
+<script type="application/json" id="page-markdown">"# Installing aat\n\n`aat` is one binary with no runtime to install. You build it from source with Rust 1.85 or later\n([rustup.rs](https://rustup.rs)), on Windows, macOS or Linux.\n\n```sh\ngit clone https://github.com/lucas-stanford/agent-automations\ncd agent-automations/aat\ncargo install --locked --path crates/aat\n```\n\nCargo puts `aat` in `~/.cargo/bin` (`%USERPROFILE%\\.cargo\\bin` on Windows), which rustup adds to\nyour PATH. Check it with `aat --version`.\n\nOther software, including [Adaptive API Toolkit](https://gburgyan.github.io/aat/install/), also\nuses the `aat` command. Check `command -v aat` on macOS or Linux, or `Get-Command aat` in\nPowerShell. If another executable takes precedence, run this host by its full path rather than\noverriding the other tool.\n\nTo upgrade, pull and run the same `cargo install` again. On Windows it cannot replace `aat.exe`\nwhile a run is using it; if it fails for that reason, wait for the run to end and try again.\n\n## Uninstall\n\n1. Stop the watcher for this state folder, if one is registered: `aat watcher stop`.\n2. Remove the binary: `cargo uninstall aat`.\n3. If you also want aat's state gone (consent, run records, config), delete its state folder:\n   `AAT_HOME` if you set it, else the per-OS folder in the\n   [README](aat.html#where-state-lives).\n\nUninstalling leaves your automations alone, both in `~/.agents/automations/` and in each\nrepository's `.agents/automations/`.\n"</script>
+<script src="search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</body>
+</html>

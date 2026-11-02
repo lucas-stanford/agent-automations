@@ -1,0 +1,27 @@
+{
+  "name": "agent-automations-spec",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Agent Automations specification, documentation site, and host-neutral agent skill.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Lucas Stanford",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucas-stanford/agent-automations.git"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "build": "node site/build.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "yaml": "^2"
+  },
+  "devDependencies": {
+    "croner": "^9",
+    "vitest": "^3"
+  }
+}
