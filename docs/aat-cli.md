@@ -92,8 +92,11 @@ Prints the consent preview, then asks `Arm <name>? [y/N]`. Only `y` or `yes` arm
 |---|---|
 | `-y`, `--yes` | Accepts the preview without asking. Needed when standard input is not a terminal, or `aat arm` refuses with `not armed — re-run with --yes to accept the preview`. |
 
-Consent is pinned to the content hashes of `AUTOMATION.md` and every script it names. Any change
-turns the automation `off` until you arm it again. Consent to a repository automation also expires
+Consent is pinned to the content hashes of `AUTOMATION.md`, every script it names, and every local
+file those scripts import. aat follows a `./` or `../` path in `import … from`, `import(…)`,
+`export … from` and `require(…)` in `.mjs`, `.js` and `.cjs` files, through any number of files.
+Packages, and files outside the automation folder, are not pinned. Any change turns the automation
+`off` until you arm it again. Consent to a repository automation also expires
 after `consent-expiry` (see [CONFIG.md](aat-config.html)). Arming a repository automation registers its
 repository root, so `aat list`, the UI and the watcher find it from any folder.
 

@@ -87,8 +87,8 @@ terminal UI shows what needs you.
    aat watcher status
    ```
 
-When you edit `AUTOMATION.md` or one of its scripts, the automation turns `off` until you arm it
-again. A failed run shows a desktop notification; set `notify-on-failed = false` in `config.toml`,
+When you edit `AUTOMATION.md`, one of its scripts or a local module a script imports, the
+automation turns `off` until you arm it again. A failed run shows a desktop notification; set `notify-on-failed = false` in `config.toml`,
 or `AAT_NO_NOTIFY=1`, to turn that off. [docs/CLI.md](aat-cli.html) lists every command.
 
 ## Reporting from inside a run

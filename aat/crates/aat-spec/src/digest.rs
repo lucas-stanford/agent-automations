@@ -1,7 +1,7 @@
-//! The consent pin: one hash over `AUTOMATION.md` and every script it can run (paths included), and
-//! one per file so a change can be named.
+//! The consent pin: one hash over `AUTOMATION.md`, every script it can run and the local modules
+//! those scripts import (paths included), and one per file so a change can be named.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use aat_model::{Automation, Hook, Located};
@@ -59,12 +59,118 @@ pub fn script_path(dir: &Path, script: &str) -> PathBuf {
     p
 }
 
+/// Scripts whose local imports run with them, so consent covers those files too.
+const MODULE_SCRIPTS: &[&str] = &["mjs", "js", "cjs"];
+
+/// The local files the scripts import, directly or through each other: what `import … from`,
+/// `import(…)`, `export … from` and `require(…)` name with a `./` or `../` path in a `.mjs`, `.js`
+/// or `.cjs` file. Relative paths written with `/`, sorted, never a script itself. A package
+/// (`node:fs`, `yaml`), a file outside the automation directory and a file that does not exist
+/// are left out.
+fn module_files(l: &Located) -> Vec<String> {
+    let scripts: BTreeSet<Vec<String>> = script_files(&l.automation)
+        .iter()
+        .filter_map(|s| resolve(&[], &s.script))
+        .collect();
+    let mut found: BTreeSet<Vec<String>> = BTreeSet::new();
+    let mut queue: Vec<Vec<String>> = scripts.iter().cloned().collect();
+    while let Some(file) = queue.pop() {
+        let is_module_script = file
+            .last()
+            .and_then(|name| name.rsplit_once('.'))
+            .is_some_and(|(_, ext)| MODULE_SCRIPTS.contains(&ext));
+        if !is_module_script {
+            continue;
+        }
+        let Ok(source) = std::fs::read_to_string(script_path(&l.dir, &file.join("/"))) else {
+            continue;
+        };
+        for spec in local_specifiers(&source) {
+            let Some(target) = resolve(&file[..file.len() - 1], spec) else {
+                continue;
+            };
+            // `require("./lib")` may leave the extension out.
+            let Some(target) = ["", ".js", ".mjs", ".cjs"].iter().find_map(|ext| {
+                let mut t = target.clone();
+                *t.last_mut()? += ext;
+                script_path(&l.dir, &t.join("/")).is_file().then_some(t)
+            }) else {
+                continue;
+            };
+            if !scripts.contains(&target) && found.insert(target.clone()) {
+                queue.push(target);
+            }
+        }
+    }
+    found.into_iter().map(|parts| parts.join("/")).collect()
+}
+
+/// `path` (with `/` or `\`) taken from the directory `from`, as parts below the automation
+/// directory; `None` when it climbs out of it.
+fn resolve(from: &[String], path: &str) -> Option<Vec<String>> {
+    let mut parts = from.to_vec();
+    for part in path.split(['/', '\\']) {
+        match part {
+            "" | "." => {}
+            ".." => {
+                parts.pop()?;
+            }
+            other => parts.push(other.to_string()),
+        }
+    }
+    (!parts.is_empty()).then_some(parts)
+}
+
+/// The `./` and `../` paths a JavaScript source imports. Comments are skipped, a string ends on
+/// its own line, and it counts only right after `from`, `import`, `import(` or `require(`.
+fn local_specifiers(source: &str) -> Vec<&str> {
+    let bytes = source.as_bytes();
+    let line_end = |from: usize| source[from..].find('\n').map_or(bytes.len(), |n| from + n);
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'/' if bytes.get(i + 1) == Some(&b'/') => i = line_end(i),
+            b'/' if bytes.get(i + 1) == Some(&b'*') => {
+                i = source[i + 2..]
+                    .find("*/")
+                    .map_or(bytes.len(), |n| i + n + 4);
+            }
+            quote @ (b'"' | b'\'') => {
+                let Some(len) = source[i + 1..line_end(i + 1)].find(char::from(quote)) else {
+                    i += 1;
+                    continue;
+                };
+                let literal = &source[i + 1..i + 1 + len];
+                if (literal.starts_with("./") || literal.starts_with("../"))
+                    && follows_import(&source[..i])
+                {
+                    out.push(literal);
+                }
+                i += len + 2;
+            }
+            _ => i += 1,
+        }
+    }
+    out
+}
+
+fn follows_import(before: &str) -> bool {
+    let before = before.trim_end();
+    let before = before.strip_suffix('(').map_or(before, str::trim_end);
+    ["from", "import", "require"].iter().any(|word| {
+        before.strip_suffix(word).is_some_and(|head| {
+            !head.ends_with(|c: char| c.is_alphanumeric() || c == '_' || c == '$' || c == '.')
+        })
+    })
+}
+
 /// The consent pin of one automation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Digest {
-    /// `sha256:<hex>` over `AUTOMATION.md` and every script.
+    /// `sha256:<hex>` over `AUTOMATION.md`, every script and every module they import.
     pub digest: String,
-    /// `AUTOMATION.md` and each script's relative path -> `sha256:<hex>`.
+    /// `AUTOMATION.md` and each script's and module's relative path -> `sha256:<hex>`.
     pub files: BTreeMap<String, Option<String>>,
 }
 
@@ -83,21 +189,30 @@ fn hash_bytes(bytes: &[u8]) -> String {
 }
 
 /// Hash `AUTOMATION.md` and every script it can run: the file, then for each script its relative
-/// path, NUL, its bytes, NUL. The same scheme as pi-automations. A missing file is refused, naming
-/// the field.
+/// path, NUL, its bytes, NUL, then the same for each module the scripts import. Without imports it
+/// is the same scheme as pi-automations. A missing script is refused, naming the field.
 pub fn digest_of(l: &Located) -> Result<Digest, Refusal> {
     let mut h = Sha256::new();
     let mut files = BTreeMap::new();
     let text = read_or_refuse(&l.file, "AUTOMATION.md", "AUTOMATION.md")?;
     h.update(&text);
     files.insert("AUTOMATION.md".to_string(), Some(hash_bytes(&text)));
+    let mut add = |path: &str, bytes: &[u8]| {
+        h.update(path.as_bytes());
+        h.update([0u8]);
+        h.update(bytes);
+        h.update([0u8]);
+        files.insert(path.to_string(), Some(hash_bytes(bytes)));
+    };
     for s in script_files(&l.automation) {
         let bytes = read_or_refuse(&script_path(&l.dir, &s.script), &s.field, &quote(&s.script))?;
-        h.update(s.script.as_bytes());
-        h.update([0u8]);
-        h.update(&bytes);
-        h.update([0u8]);
-        files.insert(s.script.clone(), Some(hash_bytes(&bytes)));
+        add(&s.script, &bytes);
+    }
+    for module in module_files(l) {
+        // Found a moment ago; one removed since is simply no longer imported.
+        if let Ok(bytes) = std::fs::read(script_path(&l.dir, &module)) {
+            add(&module, &bytes);
+        }
     }
     Ok(Digest {
         digest: format!("sha256:{}", hex::encode(h.finalize())),
@@ -112,6 +227,9 @@ pub fn file_hashes_of(l: &Located) -> BTreeMap<String, Option<String>> {
     out.insert("AUTOMATION.md".to_string(), hash(&l.file));
     for s in script_files(&l.automation) {
         out.insert(s.script.clone(), hash(&script_path(&l.dir, &s.script)));
+    }
+    for module in module_files(l) {
+        out.insert(module.clone(), hash(&script_path(&l.dir, &module)));
     }
     out
 }
@@ -277,6 +395,95 @@ mod tests {
             "hooks.pre[0].script: \"scripts/missing.js\" not found"
         );
         assert_eq!(file_hashes_of(&l)["scripts/missing.js"], None);
+    }
+
+    const WATCHED: &str = "---\nname: watched\ndescription: d\non:\n  watch:\n    script: scripts/watch.mjs\n    every: 5m\n  manual: true\nhooks:\n  pre:\n    - script: scripts/pick.mjs\n---\n\nBody.\n";
+
+    fn watched() -> (tempfile::TempDir, Located) {
+        setup(
+            "watched",
+            WATCHED,
+            &[
+                (
+                    "scripts/watch.mjs",
+                    "// GitHub's clock and ours can disagree.\nimport { waiting } from \"./queue.mjs\";\nimport fs from \"node:fs\";\n",
+                ),
+                (
+                    "scripts/pick.mjs",
+                    "import { waiting } from './queue.mjs';\nimport \"./pick.mjs\";\n",
+                ),
+                (
+                    "scripts/queue.mjs",
+                    "const { gh } = require(\"./gh\");\nexport * from \"../shared/paths.mjs\";\nimport(\"../../outside.mjs\");\n",
+                ),
+                ("scripts/gh.js", "module.exports = {};\n"),
+            ],
+        )
+    }
+
+    #[test]
+    fn pins_the_local_modules_the_scripts_import_through_each_other() {
+        let (_t, l) = watched();
+        std::fs::create_dir_all(l.dir.join("shared")).unwrap();
+        std::fs::write(l.dir.join("shared/paths.mjs"), "export const a = 1;\n").unwrap();
+        let before = digest_of(&l).unwrap();
+        assert_eq!(
+            before.files.keys().collect::<Vec<_>>(),
+            [
+                "AUTOMATION.md",
+                "scripts/gh.js",
+                "scripts/pick.mjs",
+                "scripts/queue.mjs",
+                "scripts/watch.mjs",
+                "shared/paths.mjs"
+            ]
+        );
+        assert_eq!(before.files, file_hashes_of(&l));
+
+        std::fs::write(l.dir.join("shared/paths.mjs"), "export const a = 2;\n").unwrap();
+        let after = digest_of(&l).unwrap();
+        assert_ne!(after.digest, before.digest);
+        assert_eq!(
+            changed_file(&before.files, &after.files).as_deref(),
+            Some("shared/paths.mjs")
+        );
+    }
+
+    #[test]
+    fn without_imports_the_digest_is_unchanged() {
+        // The daily scripts import nothing, so `matches_the_reference_scheme` still holds; a
+        // script that imports only packages pins only itself.
+        let (_t, l) = setup(
+            "packages",
+            "---\nname: packages\ndescription: d\non:\n  manual: true\nhooks:\n  pre:\n    - script: scripts/a.mjs\n---\n\nBody.\n",
+            &[(
+                "scripts/a.mjs",
+                "import fs from \"node:fs\";\nimport yaml from \"yaml\";\n",
+            )],
+        );
+        assert_eq!(
+            digest_of(&l).unwrap().files.keys().collect::<Vec<_>>(),
+            ["AUTOMATION.md", "scripts/a.mjs"]
+        );
+    }
+
+    #[test]
+    fn finds_every_import_form_and_nothing_else() {
+        let source = "import a from \"./a.mjs\";\n\
+            import \"./b.mjs\";\n\
+            export { c } from './c.mjs';\n\
+            const d = await import ( \"./d.mjs\" );\n\
+            const e = require('../e.cjs');\n\
+            // import x from \"./commented.mjs\"\n\
+            /* import y from \"./blocked.mjs\" */\n\
+            const path = \"./just-a-string.mjs\";\n\
+            const wherefrom = 1; somewherefrom \"./not.mjs\";\n\
+            log(\"it's\" + 'fine');\n\
+            import f from \"node:fs\";\n";
+        assert_eq!(
+            local_specifiers(source),
+            ["./a.mjs", "./b.mjs", "./c.mjs", "./d.mjs", "../e.cjs"]
+        );
     }
 
     #[test]
