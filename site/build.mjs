@@ -1,4 +1,4 @@
-// Builds the Agent Automations site from the specification, host-neutral skill, and aat host docs.
+// Builds the Agent Automations site from the specification and the host-neutral skill.
 // The output includes HTML, Markdown, examples, llms.txt, and a search index. No network or
 // dependencies beyond `yaml`; the deterministic output can be checked against the committed docs.
 
@@ -14,9 +14,6 @@ const CONTENT_DIR = path.join(SITE_DIR, "content");
 const ASSETS_DIR = path.join(SITE_DIR, "assets");
 export const DEFAULT_OUT = path.join(ROOT, "docs");
 export const SKILL_DIR = path.join(ROOT, "skills", "agent-automations");
-const AAT_DIR = path.join(ROOT, "aat");
-const AAT_EXAMPLES_DIR = path.join(AAT_DIR, "tests", "conformance", "valid");
-const AAT_EXAMPLES_OUT = "aat-examples";
 /** Where the copy of the skill folder goes in the output, and its zip beside it. */
 export const SKILL_OUT = "skills/agent-automations";
 export const SKILL_ZIP = "skills/agent-automations.zip";
@@ -27,9 +24,8 @@ export const SITE_TAGLINE = "A standardized way to tell AI agents when to act.";
 export const SKILL_GROUP = "Agent skill";
 /** The pi-automations example pages, last in the sidebar; other specification pages stay host-neutral. */
 export const PI_GROUP = "Example: pi-automations";
-export const AAT_GROUP = "aat";
 /** Sidebar groups, in order. The empty group is the unlabelled top of the sidebar. */
-export const GROUPS = ["", "For automation authors", "For host implementors", SKILL_GROUP, "Optional", AAT_GROUP, PI_GROUP];
+export const GROUPS = ["", "For automation authors", "For host implementors", SKILL_GROUP, "Optional", PI_GROUP];
 
 // ---------------------------------------------------------------------------------------------
 // Small helpers
@@ -750,89 +746,6 @@ function readSkillPages() {
   });
 }
 
-const AAT_PAGES = [
-  { file: "README.md", slug: "aat", nav: "Overview", description: "A standalone terminal host for Agent Automations." },
-  { file: "docs/INSTALL.md", slug: "aat-install", nav: "Install", description: "Build and install the aat host." },
-  { file: "docs/CLI.md", slug: "aat-cli", nav: "Commands", description: "The aat commands, flags, and exit codes." },
-  { file: "docs/CONFIG.md", slug: "aat-config", nav: "Configuration", description: "Configure the aat host and agent CLIs." },
-  { file: "docs/AGENTS.md", slug: "aat-agents", nav: "Agent CLIs", description: "How aat runs each supported agent CLI." },
-  { file: "docs/ARCHITECTURE.md", slug: "aat-architecture", nav: "Architecture", description: "The aat host's crates, state, and execution model." },
-];
-
-/** Rewrite prose links without changing examples or inline code. */
-export function rewriteDocLinks(markdown, resolveLink) {
-  let fence = "";
-  return lf(markdown).split("\n").map((line) => {
-    const match = FENCE_RE.exec(line);
-    if (fence) {
-      if (match && match[2][0] === fence[0] && match[2].length >= fence.length && match[3].trim() === "") fence = "";
-      return line;
-    }
-    if (match) {
-      fence = match[2];
-      return line;
-    }
-    return line.replace(/(`+)(?!`)([\s\S]*?[^`])\1(?!`)|(\]\()([^)\s]+)(\))/g, (all, _ticks, _code, open, url, close) => {
-      if (open === undefined) return all;
-      const mapped = resolveLink(url);
-      return mapped === undefined ? all : `${open}${mapped}${close}`;
-    });
-  }).join("\n");
-}
-
-function readAatPages(repoUrl, siteSlugs) {
-  const slugs = new Map(AAT_PAGES.map((page) => [page.file, page.slug]));
-  const resolveFrom = (from) => (url) => {
-    if (/^([a-z][\w+.-]*:|#)/i.test(url)) return undefined;
-    const [target, hash] = url.split("#");
-    const anchor = hash ? `#${hash}` : "";
-    if (target.startsWith("/")) throw new Error(`aat/${from}: absolute link ${url}`);
-    const rel = path.posix.normalize(path.posix.join(path.posix.dirname(from), target));
-    if (slugs.has(rel)) return `${slugs.get(rel)}.html${anchor}`;
-    if (rel === "../site/content") return `index.html${anchor}`;
-    if (rel.startsWith("../site/content/")) {
-      const slug = path.posix.basename(rel, ".md");
-      if (rel.endsWith(".md") && siteSlugs.has(slug)) return `${slug}.html${anchor}`;
-    }
-    const examples = "tests/conformance/valid/";
-    if (rel.startsWith(examples)) {
-      let suffix = rel.slice(examples.length);
-      const source = path.join(AAT_EXAMPLES_DIR, suffix);
-      const stat = statSync(source, { throwIfNoEntry: false });
-      if (!stat) throw new Error(`aat/${from}: missing link ${url}`);
-      if (stat.isDirectory()) suffix = path.posix.join(suffix, "AUTOMATION.md");
-      return `${AAT_EXAMPLES_OUT}/${suffix}${anchor}`;
-    }
-    const full = path.resolve(AAT_DIR, rel);
-    const relative = path.relative(AAT_DIR, full);
-    if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
-      throw new Error(`aat/${from}: link leaves the host ${url}`);
-    }
-    const stat = statSync(full, { throwIfNoEntry: false });
-    if (!stat) throw new Error(`aat/${from}: missing link ${url}`);
-    const encoded = rel.split("/").map(encodeURIComponent).join("/");
-    return `${repoUrl}/${stat.isDirectory() ? "tree" : "blob"}/main/aat/${encoded}${anchor}`;
-  };
-
-  return AAT_PAGES.map((page, i) => {
-    const raw = lf(readFileSync(path.join(AAT_DIR, page.file), "utf8"));
-    const lines = raw.split("\n");
-    const heading = HEADING_RE.exec(lines[0] ?? "");
-    if (!heading || heading[1] !== "#") throw new Error(`aat/${page.file}: needs a # heading`);
-    const resolveLink = resolveFrom(page.file);
-    return {
-      ...page,
-      group: AAT_GROUP,
-      order: i + 1,
-      title: heading[2],
-      titleMarkdown: heading[2],
-      body: lines.slice(1).join("\n").replace(/^\n+/, ""),
-      markdown: rewriteDocLinks(raw, resolveLink),
-      resolveLink,
-    };
-  });
-}
-
 /** The generated download links at the top of the SKILL.md page. */
 function skillDownloadsHtml() {
   const files = walkFiles(SKILL_DIR);
@@ -1027,12 +940,12 @@ export function checkLinks(outDir, htmlFiles) {
 export function buildSite({ outDir = DEFAULT_OUT, log = () => {} } = {}) {
   const repo = repository();
   const content = readPages();
-  const pages = sortPages([...content, ...readSkillPages(), ...readAatPages(repo.url, new Set(content.map((p) => p.slug)))]);
+  const pages = sortPages([...content, ...readSkillPages()]);
   const slugs = new Set(pages.map((p) => p.slug));
   if (slugs.size !== pages.length) throw new Error("two pages have the same slug");
   if (!slugs.has("index")) throw new Error("site/content needs an index.md");
   for (const page of pages) {
-    if (page.group !== SKILL_GROUP && page.group !== AAT_GROUP) continue;
+    if (page.group !== SKILL_GROUP) continue;
     const r = new Renderer(page, slugs);
     page.titleHtml = page.titleMarkdown === undefined ? escapeHtml(page.title) : r.inline(page.titleMarkdown);
     page.title = stripTags(page.titleHtml);
@@ -1101,12 +1014,6 @@ export function buildSite({ outDir = DEFAULT_OUT, log = () => {} } = {}) {
     zipFiles(skillFiles.map((rel) => ({ name: `${zipRoot}/${rel}`, data: readFileSync(path.join(SKILL_DIR, rel)) }))),
   );
 
-  for (const rel of walkFiles(AAT_EXAMPLES_DIR)) {
-    const dst = path.join(outDir, AAT_EXAMPLES_OUT, rel);
-    mkdirSync(path.dirname(dst), { recursive: true });
-    copyFileSync(path.join(AAT_EXAMPLES_DIR, rel), dst);
-  }
-
   writeFileSync(
     path.join(outDir, "search-index.js"),
     `window.__SEARCH_INDEX__=${JSON.stringify(index).replace(/</g, "\\u003c")};\n`,
@@ -1115,7 +1022,7 @@ export function buildSite({ outDir = DEFAULT_OUT, log = () => {} } = {}) {
   const llms = [
     `# ${SITE_TITLE}`,
     "",
-    `> ${SITE_TAGLINE} An automation is a folder with an AUTOMATION.md: YAML frontmatter that says when an agent runs and what runs before and after it, and a Markdown body that is the prompt for each run. Draft 0.1.0.`,
+    `> ${SITE_TAGLINE} An automation is a folder with an AUTOMATION.md: YAML frontmatter that says when an agent runs and what runs before and after it, and a Markdown body that is the prompt for each run. Draft 0.2.0.`,
     "",
     "## Docs",
     "",

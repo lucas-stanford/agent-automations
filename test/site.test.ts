@@ -1,4 +1,4 @@
-/** The spec, host docs, and agent skill: examples parse as documented, and docs is current. */
+/** The spec and agent skill: examples parse as documented by fm, and docs is current. */
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -7,8 +7,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 // @ts-expect-error -- a plain ESM build script with no type declarations
-import { buildSite, DEFAULT_OUT, extractExamples, GROUPS, PI_GROUP, rewriteDocLinks, SKILL_OUT, SKILL_ZIP, splitFrontMatter } from "../site/build.mjs";
-import { parseAutomation, splitFrontmatter } from "./reference-host/dist/parse.js";
+import { buildSite, DEFAULT_OUT, extractExamples, GROUPS, PI_GROUP, SKILL_OUT, SKILL_ZIP, splitFrontMatter } from "../site/build.mjs";
+import { fmAvailable, fmValidate } from "./helpers/fm.js";
 import { mentionsPi } from "./helpers/pi-only.js";
 import { tempDir } from "./helpers/temp.js";
 
@@ -34,41 +34,31 @@ function walk(dir: string): string[] {
 
 const rel = (file: string) => path.relative(ROOT, file).split(path.sep).join("/");
 
-describe("README screenshots", () => {
-  it("uses accessible local PNGs for the demo", () => {
-    const readme = readFileSync(path.join(ROOT, "README.md"), "utf8");
-    const images = [...readme.matchAll(/!\[([^\]]+)\]\((assets\/screenshots\/[^)]+)\)/g)];
-    expect(readme).toContain("These screens use demo data");
-    expect(images.length).toBeGreaterThanOrEqual(3);
-    for (const match of images) {
-      expect(match[1]?.trim()).toBeTruthy();
-      const image = readFileSync(path.join(ROOT, match[2] as string));
-      expect(image.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-      expect(image.readUInt32BE(16)).toBeGreaterThanOrEqual(800);
-      expect(image.readUInt32BE(20)).toBeGreaterThanOrEqual(400);
-    }
-  });
-});
-
 /** Turn an example into the AUTOMATION.md text and the directory name a host would see. */
 function asAutomation(ex: Example): { text: string; dir: string } {
   const text = ex.flags.includes("frontmatter") ? `---\n${ex.code}\n---\n\nRun.\n` : ex.code;
-  const yaml = splitFrontmatter(text)?.yaml ?? "";
+  const yaml = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? "";
   const named = /^name:\s*["']?([^"'\s#]+)/m.exec(yaml)?.[1];
   return { text, dir: ex.attrs.dir ?? named ?? "example" };
 }
 
-function parseError(text: string, dir: string): string | undefined {
-  try {
-    parseAutomation(text, dir);
-    return undefined;
-  } catch (e) {
-    return (e as Error).message;
-  }
+/**
+ * A refusal from a YAML library: the specification lets a host word these its own way after
+ * `frontmatter: `, so the field, the fix after " — " and the line are what must match (as fm's own
+ * conformance tests compare them).
+ */
+function sameRefusal(actual: string | undefined, expected: string): boolean {
+  if (actual === undefined) return false;
+  if (!(expected.startsWith("frontmatter: ") && expected.includes(" at line "))) return actual === expected;
+  if (!actual.startsWith("frontmatter: ")) return false;
+  const fix = expected.includes(" — ") ? expected.slice(expected.lastIndexOf(" — ")) : "";
+  const line = /at line (\d+),/.exec(expected)?.[1];
+  return actual.endsWith(fix) && (line === undefined || actual.includes(`line ${line},`));
 }
 
-function currentDraftLabel(message: string | undefined): string | undefined {
-  return message?.replaceAll("Draft 0.2", "Draft 0.1.0");
+function parseError(text: string, dir: string): string | undefined {
+  const answer = fmValidate(text, dir);
+  return answer.ok ? undefined : answer.error;
 }
 
 /** Markdown documents whose `automation` and `frontmatter` examples must parse as marked. */
@@ -79,7 +69,15 @@ const documents = [
   ...walk(SKILL_DIR).filter((f) => f.endsWith(".md") && path.basename(f) !== "AUTOMATION.md"),
 ];
 
-describe("site and skill examples", () => {
+const FM = fmAvailable();
+
+describe("fm, the reference implementation", () => {
+  it("is installed, to check every example", () => {
+    expect(FM, "install fm (https://github.com/lucas-stanford/fm) or set FM_BIN to it").toBe(true);
+  });
+});
+
+describe.skipIf(!FM)("site and skill examples", () => {
   const cases = documents.flatMap((file) =>
     (extractExamples(readFileSync(file, "utf8")) as Example[]).map((ex, i) => ({
       name: `${rel(file)} #${i + 1}${ex.attrs.title ? ` (${ex.attrs.title})` : ""}`,
@@ -108,17 +106,12 @@ describe("site and skill examples", () => {
     const { text, dir } = asAutomation(ex);
     const error = parseError(text, dir);
     if (ex.attrs.invalid !== undefined) {
-      expect(currentDraftLabel(error), "the example should be refused").toBe(ex.attrs.invalid);
+      expect(sameRefusal(error, ex.attrs.invalid), `refused with ${error ?? "nothing"}, not ${ex.attrs.invalid}`).toBe(true);
     } else {
       expect(error, "the example should parse").toBeUndefined();
     }
   });
 
-  it("only updates the pinned reference host's draft label", () => {
-    const error = parseError("---\n---\n\nSay hello.\n", "empty-frontmatter");
-    expect(error).toBe("frontmatter: is empty — Draft 0.2 needs at least name, description and on");
-    expect(currentDraftLabel(error)).toBe("frontmatter: is empty — Draft 0.1.0 needs at least name, description and on");
-  });
 });
 
 describe("the agent skill", () => {
@@ -156,16 +149,22 @@ describe("the agent skill", () => {
 
   const templates = walk(path.join(SKILL_DIR, "assets")).filter((f) => path.basename(f) === "AUTOMATION.md");
 
-  it("has a template for each trigger", () => {
-    const parsed = templates.map((f) => parseAutomation(readFileSync(f, "utf8"), path.basename(path.dirname(f))));
+  const parse = (file: string) => {
+    const answer = fmValidate(readFileSync(file, "utf8"), path.basename(path.dirname(file)));
+    if (!answer.ok) throw new Error(answer.error);
+    return answer.automation;
+  };
+
+  it.skipIf(!FM)("has a template for each trigger", () => {
+    const parsed = templates.map(parse);
     expect(parsed.some((a) => a.on.schedule)).toBe(true);
     expect(parsed.some((a) => a.on.watch)).toBe(true);
     expect(parsed.some((a) => a.on.manual && !a.on.schedule && !a.on.watch)).toBe(true);
   });
 
-  it.each(templates.map((f) => ({ name: rel(f), file: f })))("$name parses and its scripts exist", ({ file }) => {
+  it.skipIf(!FM).each(templates.map((f) => ({ name: rel(f), file: f })))("$name parses and its scripts exist", ({ file }) => {
     const dir = path.dirname(file);
-    const automation = parseAutomation(readFileSync(file, "utf8"), path.basename(dir));
+    const automation = parse(file);
     const scripts = [
       ...(automation.on.watch ? [automation.on.watch.script] : []),
       ...[...automation.hooks.pre, ...automation.hooks.post].flatMap((h) => ("script" in h ? [h.script] : [])),
@@ -256,25 +255,6 @@ function unzip(zip: Buffer): Map<string, Buffer> {
   return files;
 }
 
-describe("aat documentation links", () => {
-  it("rewrites prose links without changing inline code or nested fenced examples", () => {
-    const text = [
-      "[Commands](docs/CLI.md#inside-a-run)",
-      "`[literal](docs/CLI.md)`",
-      "````markdown",
-      "[example](docs/CLI.md)",
-      "```text",
-      "[nested](docs/CLI.md)",
-      "```",
-      "````",
-    ].join("\n");
-    const rewritten = rewriteDocLinks(text, (url: string) =>
-      url.startsWith("docs/CLI.md") ? url.replace("docs/CLI.md", "aat-cli.html") : undefined,
-    );
-    expect(rewritten).toBe(text.replace("](docs/CLI.md#inside-a-run)", "](aat-cli.html#inside-a-run)"));
-  });
-});
-
 describe("docs", () => {
   let built: { out: string; files: string[]; pages: string[] } | undefined;
   const build = () => {
@@ -302,14 +282,14 @@ describe("docs", () => {
     const { out } = build();
     const html = readFileSync(path.join(out, "index.html"), "utf8");
     const script = readFileSync(path.join(out, "assets", "site.js"), "utf8");
-    expect(html).toContain("Agent Automations · Draft 0.1.0");
-    expect(readFileSync(path.join(out, "specification.md"), "utf8")).toContain("Draft 0.1.0");
-    expect(readFileSync(path.join(out, "llms.txt"), "utf8")).toContain("Draft 0.1.0");
+    expect(html).toContain("Agent Automations · Draft 0.2.0");
+    expect(readFileSync(path.join(out, "specification.md"), "utf8")).toContain("Draft 0.2.0");
+    expect(readFileSync(path.join(out, "llms.txt"), "utf8")).toContain("Draft 0.2.0");
     expect(readFileSync(path.join(SKILL_DIR, "SKILL.md"), "utf8")).toContain(
-      "compatibility: Agent Automations Draft 0.1.0",
+      "compatibility: Agent Automations Draft 0.2.0",
     );
-    expect(html).toContain('localStorage.getItem("aat-theme")');
-    expect(script).toContain('var THEME_KEY = "aat-theme"');
+    expect(html).toContain('localStorage.getItem("agent-automations-theme")');
+    expect(script).toContain('var THEME_KEY = "agent-automations-theme"');
   });
 
   it("has pages rendered from the agent skill, and a byte-identical copy of it", () => {
@@ -359,7 +339,7 @@ describe("docs", () => {
     );
     expect(files).toContain("llms.txt");
     const hosts = readFileSync(path.join(out, "hosts.html"), "utf8");
-    expect(hosts).toContain('href="aat.html"');
+    expect(hosts).toContain('href="https://github.com/lucas-stanford/fm"');
 
     const committed = walk(DEFAULT_OUT as string).map((f) => path.relative(DEFAULT_OUT as string, f).split(path.sep).join("/"));
     expect(committed, "docs is out of date: run npm run build").toEqual(files);
@@ -369,31 +349,5 @@ describe("docs", () => {
     expect(stale, "docs is out of date: run npm run build").toEqual([]);
   });
 
-  it("publishes the aat documentation and its example files", () => {
-    const { out, files, pages } = build();
-    expect(pages).toEqual(expect.arrayContaining([
-      "aat", "aat-install", "aat-cli", "aat-config", "aat-agents", "aat-architecture",
-    ]));
-    expect(pages).not.toContain("aat-glossary");
-    const overview = readFileSync(path.join(out, "aat.html"), "utf8");
-    expect(overview).toContain(">aat</h1>");
-    expect(overview).toContain('href="aat-install.html"');
-    expect(overview).toContain('href="specification.html"');
-    expect(overview).toContain('href="aat-examples/watch-inbox/AUTOMATION.md"');
-    const config = readFileSync(path.join(out, "aat-config.html"), "utf8");
-    expect(config).toContain('href="aat-cli.html#notifications"');
-    const search = readFileSync(path.join(out, "search-index.js"), "utf8");
-    expect(search).toContain('"u":"aat-cli.html');
-    const markdown = readFileSync(path.join(out, "aat.md"), "utf8");
-    expect(markdown).toContain("# aat\n");
-    expect(markdown).toContain("](aat-install.html)");
-    expect(markdown).toContain("](aat-examples/watch-inbox/AUTOMATION.md)");
-    const examples = path.join(ROOT, "aat", "tests", "conformance", "valid");
-    for (const file of walk(examples)) {
-      const rel = path.relative(examples, file).split(path.sep).join("/");
-      expect(files).toContain(`aat-examples/${rel}`);
-      expect(readFileSync(path.join(out, "aat-examples", rel)).equals(readFileSync(file)), rel).toBe(true);
-    }
-  });
 
 });
