@@ -1,6 +1,6 @@
 # Specification
 
-> The complete format specification for Agent Automations, Draft 0.1.0.
+> The complete format specification for Agent Automations, Draft 0.2.0.
 
 This page is the format: what every host must accept, and what it must refuse. Behaviour that belongs to one host (commands, progress reporting, plugins) is up to that host; see [Hosts](hosts.md). The words **must**, **should** and **may** have their usual specification meaning.
 
@@ -53,7 +53,7 @@ Do not comment twice on the same pull request.
 
 ### Frontmatter
 
-Draft 0.1.0 has exactly these eight fields; anything else is refused by name.
+Draft 0.2.0 has exactly these nine fields; anything else is refused by name.
 
 | Field | Required | Constraints |
 |---|---|---|
@@ -65,6 +65,7 @@ Draft 0.1.0 has exactly these eight fields; anything else is refused by name.
 | `on` | Yes | A mapping with at least one trigger: `manual`, `schedule`, `watch`. |
 | `hooks` | No | A mapping with an optional `pre` list and an optional `post` list, and nothing else. |
 | `flow` | No | `loose` (default) or `strict`. Optional: see [Flowcharts](flowcharts.md#flow-field). |
+| `nodes` | No | Steps of a strict flowchart that run through their own agent CLI or model. Optional: see [Flowcharts](flowcharts.md#nodes-field). |
 
 ### `enabled` field
 
@@ -263,7 +264,7 @@ The checks run in this order:
 4. `name`, `description`, `enabled`, `model`, `timeout`, `on` (unknown triggers, then `manual`, `schedule`, `watch`), `hooks`.
 5. `flow`. With `flow: strict` the body is then checked against its chart, and this check reports every problem, each with its line; see [Strict flow](flowcharts.md#strict-flow).
 
-```yaml frontmatter invalid="budget, schedule: unknown fields — Draft 0.1.0 has name, description, enabled, model, timeout, on, hooks, flow"
+```yaml frontmatter invalid="budget, schedule: unknown fields — Draft 0.2.0 has name, description, enabled, model, timeout, on, hooks, flow, nodes"
 name: nightly-report
 description: Post the nightly report.
 schedule: "0 2 * * *"

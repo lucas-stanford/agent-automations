@@ -4,7 +4,7 @@
   "use strict";
 
   var root = document.documentElement;
-  var THEME_KEY = "aat-theme";
+  var THEME_KEY = "agent-automations-theme";
 
   function copyText(text) {
     if (navigator.clipboard && window.isSecureContext) {
