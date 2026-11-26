@@ -22,6 +22,6 @@
   },
   "devDependencies": {
     "croner": "^9",
-    "vitest": "^3"
+    "vitest": "^4.1.12"
   }
 }
